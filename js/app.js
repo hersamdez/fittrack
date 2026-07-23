@@ -176,7 +176,9 @@ function saveWorkout() {
 // ── NUTRITION ─────────────────────────────────────────────────────────────────
 function loadFoodGrid() {
   const grid = document.getElementById('food-grid');
-  grid.innerHTML = FOODS.map(f => `
+  const customFoods = STORE.get('custom_foods') || [];
+  const allFoods = [...FOODS, ...customFoods];
+  grid.innerHTML = allFoods.map(f => `
     <button class="food-btn" onclick="logFood('${f.id}')">
       <div class="food-btn-name">${f.name}</div>
       <div class="food-btn-macros">${f.cal} cal · ${f.protein}g P · ${f.carbs}g C</div>
@@ -184,7 +186,9 @@ function loadFoodGrid() {
 }
 
 function logFood(id) {
-  const food = FOODS.find(f => f.id === id);
+  // Check both built-in and custom foods
+  const customFoods = STORE.get('custom_foods') || [];
+  const food = [...FOODS, ...customFoods].find(f => f.id === id);
   if (!food) return;
   const data = getTodayData();
   data.nutrition = data.nutrition || [];
@@ -194,6 +198,7 @@ function logFood(id) {
   renderDashboardMacros();
   renderMealsPreview(data.nutrition);
 }
+
 
 function clearNutrition() {
   const data = getTodayData();
@@ -373,6 +378,57 @@ function saveMeasurement() {
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
+// ── CUSTOM FOOD ───────────────────────────────────────────────────────────────
+function showCustomFoodModal() {
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-cal').value = '';
+  document.getElementById('cf-protein').value = '';
+  document.getElementById('cf-carbs').value = '';
+  document.getElementById('cf-fat').value = '';
+  document.getElementById('cf-save').checked = false;
+  document.getElementById('custom-food-modal').classList.add('open');
+  setTimeout(() => document.getElementById('cf-name').focus(), 100);
+}
+
+function closeCustomFoodModal(e) {
+  if (!e || e.target.id === 'custom-food-modal') {
+    document.getElementById('custom-food-modal').classList.remove('open');
+  }
+}
+
+function logCustomFood() {
+  const name    = document.getElementById('cf-name').value.trim();
+  const cal     = parseFloat(document.getElementById('cf-cal').value) || 0;
+  const protein = parseFloat(document.getElementById('cf-protein').value) || 0;
+  const carbs   = parseFloat(document.getElementById('cf-carbs').value) || 0;
+  const fat     = parseFloat(document.getElementById('cf-fat').value) || 0;
+  const saveIt  = document.getElementById('cf-save').checked;
+
+  if (!name) { showToast('Enter a food name'); return; }
+
+  const food = { id: 'custom-' + Date.now(), name, cal, protein, carbs, fat };
+
+  // Save to custom foods list if checked
+  if (saveIt) {
+    const saved = STORE.get('custom_foods') || [];
+    saved.push(food);
+    STORE.set('custom_foods', saved);
+    loadFoodGrid(); // refresh grid to show new saved food
+  }
+
+  // Log it today
+  const data = getTodayData();
+  data.nutrition = data.nutrition || [];
+  data.nutrition.push({ ...food, loggedAt: new Date().toISOString() });
+  saveTodayData(data);
+
+  closeCustomFoodModal();
+  renderNutrition();
+  renderDashboardMacros();
+  renderMealsPreview(data.nutrition);
+  showToast(`${name} logged ✓`);
+}
+
 function showToast(msg) {
   const t = document.createElement('div');
   t.textContent = msg;
