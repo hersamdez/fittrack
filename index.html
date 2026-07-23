@@ -162,7 +162,10 @@
     </div>
 
     <div class="quick-add-section">
-      <p class="section-label">Quick add your foods</p>
+      <div class="section-header">
+        <p class="section-label">Quick add your foods</p>
+        <button class="text-btn" onclick="showCustomFoodModal()">+ Custom</button>
+      </div>
       <div class="food-grid" id="food-grid"></div>
     </div>
 
@@ -235,6 +238,30 @@
     </div>
   </div>
 
+</div>
+
+<!-- CUSTOM FOOD MODAL -->
+<div class="modal-overlay" id="custom-food-modal" onclick="closeCustomFoodModal(event)">
+  <div class="modal">
+    <h3>Log Custom Food</h3>
+    <div class="modal-fields">
+      <label>Food name<input type="text" id="cf-name" placeholder="e.g. Chipotle burrito bowl"/></label>
+      <label>Calories<input type="number" id="cf-cal" placeholder="e.g. 450"/></label>
+      <label>Protein (g)<input type="number" id="cf-protein" placeholder="e.g. 35"/></label>
+      <label>Carbs (g)<input type="number" id="cf-carbs" placeholder="e.g. 55"/></label>
+      <label>Fat (g)<input type="number" id="cf-fat" placeholder="e.g. 12"/></label>
+    </div>
+    <div class="save-for-later-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="cf-save" />
+        <span>Save to my foods for next time</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeCustomFoodModal()">Cancel</button>
+      <button class="modal-save" onclick="logCustomFood()">Log it</button>
+    </div>
+  </div>
 </div>
 
 <!-- MEASUREMENT MODAL -->
