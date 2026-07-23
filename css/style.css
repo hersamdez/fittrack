@@ -334,6 +334,11 @@ html, body {
 .modal-cancel { flex: 1; padding: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 15px; cursor: pointer; }
 .modal-save { flex: 1; padding: 13px; background: var(--accent); border: none; border-radius: var(--radius-sm); color: #0f0f0f; font-size: 15px; font-weight: 600; cursor: pointer; }
 
+/* SAVE FOR LATER TOGGLE */
+.save-for-later-row { margin-top: 14px; }
+.toggle-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); cursor: pointer; }
+.toggle-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
 /* EMPTY STATE */
 .empty-state { color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px 0; }
 
