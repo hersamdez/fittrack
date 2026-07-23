@@ -1,0 +1,294 @@
+const CACHE = 'fittrack-v1';
+const ASSETS = ['/', '/index.html', '/css/style.css', '/js/data.js', '/js/app.js', '/js/coach.js'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+});
+
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('api.anthropic.com')) return;
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request))
+  );
+});
+
+{
+  "name": "FitTrack",
+  "short_name": "FitTrack",
+  "description": "Sam's personal fitness tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FitTrack" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <title>FitTrack</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Today</span>
+    </button>
+    <button class="nav-btn" data-tab="workout" onclick="switchTab('workout')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4"/></svg>
+      <span>Workout</span>
+    </button>
+    <button class="nav-btn" data-tab="nutrition" onclick="switchTab('nutrition')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+      <span>Nutrition</span>
+    </button>
+    <button class="nav-btn" data-tab="progress" onclick="switchTab('progress')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Progress</span>
+    </button>
+    <button class="nav-btn" data-tab="coach" onclick="switchTab('coach')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Coach</span>
+    </button>
+  </nav>
+
+  <!-- DASHBOARD TAB -->
+  <div id="tab-dashboard" class="tab active">
+    <div class="page-header">
+      <div>
+        <p class="greeting" id="greeting">Good morning</p>
+        <h1 class="page-title">Today's Plan</h1>
+      </div>
+      <div class="date-badge" id="today-date"></div>
+    </div>
+
+    <div class="day-type-selector">
+      <p class="section-label">What kind of day is today?</p>
+      <div class="day-type-pills">
+        <button class="day-pill active" onclick="setDayType('push')" data-type="push">Push</button>
+        <button class="day-pill" onclick="setDayType('pull')" data-type="pull">Pull</button>
+        <button class="day-pill" onclick="setDayType('legs')" data-type="legs">Legs</button>
+        <button class="day-pill" onclick="setDayType('upper')" data-type="upper">Upper</button>
+        <button class="day-pill" onclick="setDayType('spin')" data-type="spin">Spin</button>
+        <button class="day-pill" onclick="setDayType('rest')" data-type="rest">Rest</button>
+      </div>
+    </div>
+
+    <div class="targets-row">
+      <div class="target-card">
+        <div class="target-val" id="dash-calories">0<span>/2400</span></div>
+        <div class="target-label">Calories</div>
+        <div class="mini-bar"><div class="mini-fill cal-fill" id="cal-bar"></div></div>
+      </div>
+      <div class="target-card">
+        <div class="target-val" id="dash-protein">0<span>/155g</span></div>
+        <div class="target-label">Protein</div>
+        <div class="mini-bar"><div class="mini-fill pro-fill" id="pro-bar"></div></div>
+      </div>
+      <div class="target-card">
+        <div class="target-val" id="dash-carbs">0<span>/265g</span></div>
+        <div class="target-label">Carbs</div>
+        <div class="mini-bar"><div class="mini-fill carb-fill" id="carb-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <p class="section-label">Today's workout</p>
+      <button class="text-btn" onclick="switchTab('workout')">Log →</button>
+    </div>
+    <div class="workout-preview" id="workout-preview">
+      <p class="empty-state">Select a day type above to see your plan</p>
+    </div>
+
+    <div class="section-header">
+      <p class="section-label">Nutrition today</p>
+      <button class="text-btn" onclick="switchTab('nutrition')">Log →</button>
+    </div>
+    <div class="meals-preview" id="meals-preview">
+      <p class="empty-state">No meals logged yet today</p>
+    </div>
+  </div>
+
+  <!-- WORKOUT TAB -->
+  <div id="tab-workout" class="tab">
+    <div class="page-header">
+      <h1 class="page-title">Log Workout</h1>
+      <button class="icon-btn" onclick="saveWorkout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save
+      </button>
+    </div>
+
+    <div class="workout-type-row">
+      <select class="styled-select" id="workout-type-select" onchange="loadWorkoutTemplate()">
+        <option value="push">Push Day — Chest, Shoulders, Triceps</option>
+        <option value="pull">Pull Day — Back, Biceps</option>
+        <option value="legs">Legs + Glutes</option>
+        <option value="upper">Full Upper Body</option>
+        <option value="spin">Spin / Cardio</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+
+    <div id="exercise-list" class="exercise-list"></div>
+
+    <button class="add-exercise-btn" onclick="addExercise()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add exercise
+    </button>
+
+    <div class="notes-section">
+      <label class="section-label">Session notes</label>
+      <textarea class="notes-input" id="workout-notes" placeholder="How did it feel? Energy level, anything to note..."></textarea>
+    </div>
+  </div>
+
+  <!-- NUTRITION TAB -->
+  <div id="tab-nutrition" class="tab">
+    <div class="page-header">
+      <h1 class="page-title">Nutrition</h1>
+    </div>
+
+    <div class="macro-rings" id="macro-rings">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="34"/>
+          <circle class="ring-fill cal-ring" cx="40" cy="40" r="34" id="cal-ring"/>
+        </svg>
+        <div class="ring-text"><span id="cal-val">0</span><small>cal</small></div>
+      </div>
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="34"/>
+          <circle class="ring-fill pro-ring" cx="40" cy="40" r="34" id="pro-ring"/>
+        </svg>
+        <div class="ring-text"><span id="pro-val">0</span><small>protein</small></div>
+      </div>
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="34"/>
+          <circle class="ring-fill carb-ring" cx="40" cy="40" r="34" id="carb-ring"/>
+        </svg>
+        <div class="ring-text"><span id="carb-val">0</span><small>carbs</small></div>
+      </div>
+    </div>
+
+    <div class="quick-add-section">
+      <p class="section-label">Quick add your foods</p>
+      <div class="food-grid" id="food-grid"></div>
+    </div>
+
+    <div class="section-header">
+      <p class="section-label">Logged today</p>
+      <button class="text-btn" onclick="clearNutrition()">Clear</button>
+    </div>
+    <div id="logged-foods" class="logged-foods">
+      <p class="empty-state">No foods logged yet</p>
+    </div>
+  </div>
+
+  <!-- PROGRESS TAB -->
+  <div id="tab-progress" class="tab">
+    <div class="page-header">
+      <h1 class="page-title">Progress</h1>
+    </div>
+
+    <div class="progress-section">
+      <p class="section-label">Strength tracker</p>
+      <select class="styled-select" id="lift-select" onchange="renderStrengthChart()">
+        <option value="Chest Press">Chest Press</option>
+        <option value="Incline Press">Incline Press</option>
+        <option value="Lat Pulldown">Lat Pulldown</option>
+        <option value="Seated Cable Row">Seated Cable Row</option>
+        <option value="Leg Press">Leg Press</option>
+        <option value="Romanian Deadlift">Romanian Deadlift</option>
+        <option value="Hip Thrust">Hip Thrust</option>
+        <option value="Bicep Curl">Bicep Curl</option>
+        <option value="Tricep Pushdown">Tricep Pushdown</option>
+      </select>
+      <div id="strength-chart" class="strength-chart">
+        <p class="empty-state">Log workouts to see strength progress here</p>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <p class="section-label">Body measurements</p>
+      <button class="add-measurement-btn" onclick="showMeasurementModal()">+ Log measurements</button>
+      <div id="measurements-list" class="measurements-list">
+        <p class="empty-state">No measurements logged yet</p>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <p class="section-label">Weekly summary</p>
+      <div id="weekly-summary" class="weekly-summary"></div>
+    </div>
+  </div>
+
+  <!-- COACH TAB -->
+  <div id="tab-coach" class="tab">
+    <div class="page-header">
+      <h1 class="page-title">AI Coach</h1>
+    </div>
+    <div class="coach-context-bar" id="coach-context">
+      <span class="context-badge" id="ctx-day"></span>
+      <span class="context-badge" id="ctx-nutrition"></span>
+    </div>
+    <div class="chat-window" id="chat-window">
+      <div class="chat-bubble assistant">
+        <p>Hey! I'm your AI coach. I can see your workout logs, nutrition data, and strength progress — ask me anything about your training, what to eat today, whether to go heavier, or how your progress is looking.</p>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Ask your coach anything..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+      <button class="send-btn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MEASUREMENT MODAL -->
+<div class="modal-overlay" id="measurement-modal" onclick="closeMeasurementModal(event)">
+  <div class="modal">
+    <h3>Log Measurements</h3>
+    <div class="modal-fields">
+      <label>Chest (inches)<input type="number" id="m-chest" step="0.25" placeholder="e.g. 38"/></label>
+      <label>Waist (inches)<input type="number" id="m-waist" step="0.25" placeholder="e.g. 32"/></label>
+      <label>Left arm (inches)<input type="number" id="m-arm-l" step="0.25" placeholder="e.g. 13"/></label>
+      <label>Right arm (inches)<input type="number" id="m-arm-r" step="0.25" placeholder="e.g. 13"/></label>
+      <label>Left thigh (inches)<input type="number" id="m-thigh-l" step="0.25" placeholder="e.g. 22"/></label>
+      <label>Right thigh (inches)<input type="number" id="m-thigh-r" step="0.25" placeholder="e.g. 22"/></label>
+      <label>Hips (inches)<input type="number" id="m-hips" step="0.25" placeholder="e.g. 38"/></label>
+      <label>Weight (lbs)<input type="number" id="m-weight" step="0.1" placeholder="e.g. 169"/></label>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeMeasurementModal()">Cancel</button>
+      <button class="modal-save" onclick="saveMeasurement()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/coach.js"></script>
+</body>
+</html>
